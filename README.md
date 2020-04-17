@@ -53,3 +53,10 @@ $ python3 find64.py testfile -c
 ```
 The columns are defined as follows:
 `#,start,end,length,stripped,bybytes,data`
+* `#` Increasing counter for detected base64 strings, starting at 0.
+* `start` The offset where the base64 string starts.
+* `end` The offset where the base64 string ends.
+* `length` The length of the unstripped base64 string (`end` - `start`).
+* `stripped` Boolean value if the base64 string was stripped, i.e. if whitespaces were removed.
+* `bybytes` The number of bytes that have been stripped.
+* `data` The stripped base64 string.
