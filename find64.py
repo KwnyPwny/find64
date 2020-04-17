@@ -79,7 +79,7 @@ def parse():
 	parser.add_argument('file', help='The file to parse for base64.')
 	parser.add_argument('-n', help='The minimum length for a base64 string to be returned. Default 16.', type=int, default=16)
 	parser.add_argument('-s', help='The special characters the base64 string consists of. Default \'+/\'.', default='+/')
-	parser.add_argument('-c', help='Output results as CSV', action='store_true')
+	parser.add_argument('-c', help='Output results as CSV.', action='store_true')
 	args = parser.parse_args()
 	if args.n < 4:
 		parser.error('The minimum length for a base64 string is 4.')
