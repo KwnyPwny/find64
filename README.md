@@ -3,11 +3,11 @@ This tool parses files for base64 strings. Whitespaces, which are often used wit
 ## Usage
 `python3 find64.py [-h] [-n N] [-s S] [-c] file`
 
-`file`        The file to parse for base64.  
-`-h, --help`  Show this help message and exit.  
-`-n N`        The minimum length for a base64 string to be returned. Default 16. Minimum 4.  
-`-s S`        The special characters the base64 string consists of. Default '+/'.  
-`-c`          Output results as CSV.
+* `file`        The file to parse for base64.  
+* `-h, --help`  Show this help message and exit.  
+* `-n N`        The minimum length for a base64 string to be returned. Default 16. Minimum 4.  
+* `-s S`        The special characters the base64 string consists of. Default '+/'.  
+* `-c`          Output results as CSV.
 
 ## Examples
 You can use the test file provided in this repository for exploration.
