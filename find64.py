@@ -57,7 +57,6 @@ def calculate_real_span(span, whitespaces):
 
 
 def print_results_CSV(results, binary, binary_stripped):
-	print('#,start,end,length,stripped,bybytes,data')
 	for i, result in enumerate(results):
 		print('{},{},{},{},{},{},{}'.format(i, result.real_start, result.real_end, result.real_length, result.stripped, result.real_length - result.length, binary_stripped[result.start:result.end].decode('utf-8')))
 
