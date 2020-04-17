@@ -5,7 +5,7 @@ This tool parses files for base64 strings. Whitespaces, which are often used wit
 
 `file`        The file to parse for base64.  
 `-h, --help`  Show this help message and exit.  
-`-n N`        The minimum length for a base64 string to be returned. Default 16.  
+`-n N`        The minimum length for a base64 string to be returned. Default 16. Minimum 4. 
 `-s S`        The special characters the base64 string consists of. Default '+/'.  
 `-c`          Output results as CSV.
 
