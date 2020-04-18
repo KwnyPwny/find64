@@ -42,7 +42,7 @@ bG9yZSBtYWduYSBhbGlxdXlhbSBlcmF0Lgo=
 Note, that the stripped bytes are contained here (two linefeeds).  
 Further, the stripped data is displayed and can be easily copied and base64 decoded like so:
 ```
-base64 -d <<< TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNldGV0dXIgc2FkaXBzY2luZyBlbGl0ciwgc2VkIGRpYW0gbm9udW15IGVpcm1vZCB0ZW1wb3IgaW52aWR1bnQgdXQgbGFib3JlIGV0IGRvbG9yZSBtYWduYSBhbGlxdXlhbSBlcmF0Lgo=
+$ base64 -d <<< TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNldGV0dXIgc2FkaXBzY2luZyBlbGl0ciwgc2VkIGRpYW0gbm9udW15IGVpcm1vZCB0ZW1wb3IgaW52aWR1bnQgdXQgbGFib3JlIGV0IGRvbG9yZSBtYWduYSBhbGlxdXlhbSBlcmF0Lgo=
 ```
 
 For increased automation, the results can be returned as CSV.
