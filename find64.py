@@ -1,4 +1,4 @@
-import re, argparse, base64
+import re, argparse, base64, csv, sys
 
 
 logo = '''  __ _           _  ____    ___
@@ -65,9 +65,11 @@ def calculate_span(stripped_span, whitespaces):
 
 
 def print_results_CSV(results):
-	for i, result in enumerate(results):
-		print('{},{},{},{},{},{},{}'.format(i, result.start, result.end, result.length, result.stripped, result.length - result.stripped_length, result.stripped_data))
-
+	csvwriter = csv.writer(sys.stdout)
+	if args.d:
+		csvwriter.writerows([[i, result.start, result.end, result.length, result.stripped, result.length - result.stripped_length, result.stripped_data] + [d for d in result.decoded_stripped_data.values()] for i, result in enumerate(results)])
+	else:
+		csvwriter.writerows([[i, result.start, result.end, result.length, result.stripped, result.length - result.stripped_length, result.stripped_data] for i, result in enumerate(results)])
 
 def print_results(results):
 	for i, result in enumerate(results):
