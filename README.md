@@ -1,12 +1,13 @@
 # find64
 This tool parses files for base64 strings. Whitespaces, which are often used within base64 strings, are stripped during extraction
 ## Usage
-`python3 find64.py [-h] [-n N] [-s S] [-c] file`
+`python3 find64.py [-h] [-n N] [-s S] [-d] [-c] file`
 
 * `file`        The file to parse for base64.  
 * `-h, --help`  Show this help message and exit.  
 * `-n N`        The minimum length for a base64 string to be returned. Default 16. Minimum 4.  
 * `-s S`        The special characters the base64 string consists of. Default '+/'.  
+* `-d`          Try to decode the detected base64 string.
 * `-c`          Output results as CSV.
 
 ## Examples
@@ -31,8 +32,14 @@ Match #1:
   Stripped: True (by 2 bytes)
   Shell command: tail -c 2353 testfile | head -c 186
   Stripped Data: TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNldGV0dXIgc2FkaXBzY2luZyBlbGl0ciwgc2VkIGRpYW0gbm9udW15IGVpcm1vZCB0ZW1wb3IgaW52aWR1bnQgdXQgbGFib3JlIGV0IGRvbG9yZSBtYWduYSBhbGlxdXlhbSBlcmF0Lgo=
+  
+Match #2:
+  Start: 7014  End: 7039  Length: 25
+  Stripped: False
+  Shell command: tail -c 345 testfile | head -c 25
+  Stripped Data: CSVGhpcyB3YXMgdHJpY2t5IQo
 ```
-Two base64 strings have been detected. The results contain their offsets in the file. If the base64 string contains whitespaces (regex `\s` = `[\r\n\t\f\v ]`) these are stripped. The number of stripped bytes is displayed. The provided shell command can be used to extract the unstripped string from the binary, e.g.
+Three base64 strings have been detected. The results contain their offsets in the file. If the base64 string contains whitespaces (regex `\s` = `[\r\n\t\f\v ]`) these are stripped. The number of stripped bytes is displayed. The provided shell command can be used to extract the unstripped string from the binary, e.g.
 ```
 $ tail -c 2353 testfile | head -c 186
 TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNldGV0dXIgc2FkaXBzY2luZyBlbGl0ci
@@ -50,6 +57,7 @@ For increased automation, the results can be returned as CSV.
 $ python3 find64.py testfile -c
 0,1767,1995,228,True,20,TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNldGV0dXIgc2FkaXBzY2luZyBlbGl0ciwgc2VkIGRpYW0gbm9udW15IGVpcm1vZCB0ZW1wb3IgaW52aWR1bnQgdXQgbGFib3JlIGV0IGRvbG9yZSBtYWduYSBhbGlxdXlhbSBlcmF0LCBzZWQgZGlhbSB2b2x1cHR1YS4K
 1,5006,5192,186,True,2,TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNldGV0dXIgc2FkaXBzY2luZyBlbGl0ciwgc2VkIGRpYW0gbm9udW15IGVpcm1vZCB0ZW1wb3IgaW52aWR1bnQgdXQgbGFib3JlIGV0IGRvbG9yZSBtYWduYSBhbGlxdXlhbSBlcmF0Lgo=
+2,7014,7039,25,False,0,CSVGhpcyB3YXMgdHJpY2t5IQo
 ```
 The columns are defined as follows:
 `#,start,end,length,stripped,bybytes,data`
@@ -60,3 +68,33 @@ The columns are defined as follows:
 * `stripped` Boolean value if the base64 string was stripped, i.e. if whitespaces were removed.
 * `bybytes` The number of bytes that have been stripped.
 * `data` The stripped base64 string.
+
+You might have recognized that decoding match #2 only yields gibberish.
+```
+$ base64 -d <<< CSVGhpcyB3YXMgdHJpY2t5IQo
+	%F??2v2G&?6??
+```
+Of course, it is always possible that files contain strings that look like but in fact are no base64 strings. However, this is not the case here. Let's use the decode flag `-d` to see what is going on:
+<pre>
+$ python3 find64.py testfile -d          
+  __ _           _  ____    ___
+ / _(_)         | |/ ___|  /   |
+| |_ _ _ __   __| / /___  / /| |
+|  _| | '_ \ / _` | ___ \/ /_| |
+| | | | | | | (_| | \_/ |\___  |
+|_| |_|_| |_|\__,_\_____/    |_/  https://github.com/KwnyPwny/find64
+
+[...]
+
+Match #2:
+  Start: 7014  End: 7039  Length: 25
+  Stripped: False
+  Shell command: tail -c 345 testfile | head -c 25
+  Stripped Data: CSVGhpcyB3YXMgdHJpY2t5IQo
+  Decoded Data:
+    [0:24]: b'\t%F\x86\x972\x07v\x172\x07G&\x966\xb7\x92\x10'
+    [1:25]: b'IQ\xa1\xa5\xcc\x81\xdd\x85\xcc\x81\xd1\xc9\xa5\x8d\xad\xe4\x84('
+    <b>[2:22]: b'This was tricky'</b>
+    [3:23]: b'\x1a\x1a\\\xc8\x1d\xd8\\\xc8\x1d\x1c\x9aX\xda\xdeH'
+</pre>
+Explanation follows.
