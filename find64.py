@@ -1,4 +1,4 @@
-import re, argparse
+import re, argparse, base64
 
 
 logo = '''  __ _           _  ____    ___
@@ -10,15 +10,23 @@ logo = '''  __ _           _  ____    ___
 
 
 class B64Sequence():
-	def __init__(self, start, end, real_start, real_end):
+	def __init__(self, start, end, data, stripped_start, stripped_end, stripped_data):
 		self.start = start
 		self.end = end
 		self.length = end - start
-		self.real_start = real_start
-		self.real_end = real_end
-		self.real_length = real_end - real_start
-		self.stripped = not (self.length == self.real_length)
+		self.data = data
 
+		self.stripped_start = stripped_start
+		self.stripped_end = stripped_end
+		self.stripped_length = stripped_end - stripped_start
+		self.stripped_data = stripped_data
+
+		self.stripped = not (self.stripped_length == self.length)
+
+		self.decoded_stripped_data = {}
+		for i in range(4):
+			i_end = self.stripped_length - (self.stripped_length - i) % 4
+			self.decoded_stripped_data['{}:{}'.format(i, i_end)] = base64.b64decode(stripped_data[i:i_end])
 
 def detect_whitespaces(binary):
 	whitespace_iter = re.finditer(b'\s+', binary)
@@ -28,50 +36,54 @@ def detect_whitespaces(binary):
 	return whitespaces
 
 
-def detect_b64_sequences(binary, min_length, special_characters):
-	min_repititions = str(min_length - 4)
-	all_characters = '[A-Za-z0-9' + re.escape(special_characters) + ']'
-	regex_pattern = bytes(all_characters + '{' + min_repititions + ',}(?:' + all_characters + '{2}==|' + all_characters + '{3}=|' + all_characters + '{4})', 'utf-8')
-	return re.finditer(regex_pattern, binary_stripped)
+def detect_b64_sequences(stripped_binary, min_length, special_characters):
+	min_reps = str(min_length - 4)
+	charset = '[A-Za-z0-9' + re.escape(special_characters) + ']'
+	regex_pattern = bytes(charset + '{' + min_reps + ',}(?:' + charset + '{2}==|' + charset + '{3}=|' + charset + '{4})', 'utf-8')
+	return re.finditer(regex_pattern, stripped_binary)
 
 
-def calculate_real_span(span, whitespaces):
-	real_start, real_end = span
+def calculate_span(stripped_span, whitespaces):
+	start, end = stripped_span
 	for w in whitespaces:
 		w_start, w_end = w.span()
 		w_length = w_end - w_start
-		if w_end <= real_start:
+		if w_end <= start:
 			# Whitespaces before sequence
-			real_start += w_length
-			real_end += w_length
+			start += w_length
+			end += w_length
 		else:
-			if w_start >= real_end:
+			if w_start >= end:
 				# Whitespaces behind sequence
 				break
 			else:
 				# Whitespaces inside sequence
-				if w_start == real_start:
-					real_start += w_length
-				real_end += w_length
-	return real_start, real_end
+				if w_start == start:
+					start += w_length
+				end += w_length
+	return start, end
 
 
-def print_results_CSV(results, binary, binary_stripped):
+def print_results_CSV(results):
 	for i, result in enumerate(results):
-		print('{},{},{},{},{},{},{}'.format(i, result.real_start, result.real_end, result.real_length, result.stripped, result.real_length - result.length, binary_stripped[result.start:result.end].decode('utf-8')))
+		print('{},{},{},{},{},{},{}'.format(i, result.start, result.end, result.length, result.stripped, result.length - result.stripped_length, result.stripped_data))
 
 
-def print_results(results, binary, binary_stripped):
+def print_results(results):
 	for i, result in enumerate(results):
 		print()
 		print('Match #{}:'.format(i))
-		print('  Start: {}  End: {}  Length: {}'.format(result.real_start, result.real_end, result.real_length))
+		print('  Start: {}  End: {}  Length: {}'.format(result.start, result.end, result.length))
 		if result.stripped:
-			print('  Stripped: True (by {} bytes)'.format(result.real_length - result.length))
+			print('  Stripped: True (by {} bytes)'.format(result.length - result.stripped_length))
 		else:
 			print('  Stripped: False')
-		print('  Shell command: tail -c {} {} | head -c {}'.format(len(binary) - result.real_start, args.file, result.real_length))
-		print('  Stripped Data: {}'.format(binary_stripped[result.start:result.end].decode('utf-8')))
+		print('  Shell command: tail -c {} {} | head -c {}'.format(binary_len - result.start, args.file, result.length))
+		print('  Stripped Data: {}'.format(result.stripped_data))
+		if args.d:
+			print('  Decoded Data:')
+			for o, d in result.decoded_stripped_data.items():
+				print('    [{}]: {}'.format(o, d))
 
 
 def parse():
@@ -79,6 +91,7 @@ def parse():
 	parser.add_argument('file', help='The file to parse for base64.')
 	parser.add_argument('-n', help='The minimum length for a base64 string to be returned. Default 16.', type=int, default=16)
 	parser.add_argument('-s', help='The special characters the base64 string consists of. Default \'+/\'.', default='+/')
+	parser.add_argument('-d', help='Try to decode the detected base64 string.', action='store_true')
 	parser.add_argument('-c', help='Output results as CSV.', action='store_true')
 	args = parser.parse_args()
 	if args.n < 4:
@@ -94,18 +107,20 @@ if __name__ == '__main__':
 	with open(args.file, 'rb') as f:
 		binary = f.read()
 
+	binary_len = len(binary)
+
 	whitespaces = detect_whitespaces(binary)
-	binary_stripped = re.sub(b'\s+', b'', binary)
-	b64_sequences = detect_b64_sequences(binary, args.n, args.s)
+	stripped_binary = re.sub(b'\s+', b'', binary)
+	b64_sequences = detect_b64_sequences(stripped_binary, args.n, args.s)
 
 	results = []
 
 	for seq in b64_sequences:
-		start, end = seq.span()
-		real_start, real_end = calculate_real_span(seq.span(), whitespaces)
-		results.append(B64Sequence(start, end, real_start, real_end))
+		stripped_start, stripped_end = seq.span()
+		start, end = calculate_span(seq.span(), whitespaces)
+		results.append(B64Sequence(start, end, binary[start:end].decode('utf-8'), stripped_start, stripped_end, stripped_binary[stripped_start:stripped_end].decode('utf-8')))
 
 	if args.c:
-		print_results_CSV(results, binary, binary_stripped)
+		print_results_CSV(results)
 	else:
-		print_results(results, binary, binary_stripped)
+		print_results(results)
