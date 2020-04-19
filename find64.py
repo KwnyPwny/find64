@@ -26,7 +26,7 @@ class B64Sequence():
 		self.decoded_stripped_data = {}
 		for i in range(4):
 			i_end = self.stripped_length - (self.stripped_length - i) % 4
-			self.decoded_stripped_data['{}:{}'.format(i, i_end)] = base64.b64decode(stripped_data[i:i_end])
+			self.decoded_stripped_data['{}:{}'.format(i, i_end)] = base64.b64decode(stripped_data[i:i_end], bytes(args.s, 'utf-8'))
 
 def detect_whitespaces(binary):
 	whitespace_iter = re.finditer(b'\s+', binary)
@@ -92,8 +92,8 @@ def parse():
 	parser = argparse.ArgumentParser(description='This tool parses files for base64 strings. Whitespaces, which are often used within base64 strings, are stripped during extraction.')
 	parser.add_argument('file', help='The file to parse for base64.')
 	parser.add_argument('-n', help='The minimum length for a base64 string to be returned. Default 16.', type=int, default=16)
-	parser.add_argument('-s', help='The special characters the base64 string consists of. Default `+/`.', default='+/')
-	parser.add_argument('-d', help='Try to decode the detected base64 string.', action='store_true')
+	parser.add_argument('-s', help='The special characters the base64 string consists of. Default `+/`. Urlsafe `-_`. Order matters.', default='+/')
+	parser.add_argument('-d', help='Decode the detected base64 string.', action='store_true')
 	parser.add_argument('-c', help='Output results as CSV.', action='store_true')
 	args = parser.parse_args()
 	if args.n < 4:
