@@ -7,7 +7,7 @@ This tool parses files for base64 strings. Whitespaces, which are often used wit
 * `-h, --help`  Show this help message and exit.  
 * `-n N`        The minimum length for a base64 string to be returned. Default 16. Minimum 4.  
 * `-s S`        The special characters the base64 string consists of. Default `+/`. Urlsafe `-_`. Order matters.  
-* `-d`          Decode the detected base64 string.
+* `-d [D]`      Decode the detected base64 string. The optional parameter `D` specifies from which offsets the decoding starts.
 * `-c`          Output results as CSV.
 
 ## Examples
@@ -93,7 +93,22 @@ Match #2:
     [2:22]: b'This was tricky'
     [3:23]: b'\x1a\x1a\\\xc8\x1d\xd8\\\xc8\x1d\x1c\x9aX\xda\xdeH'
 ```
-In addition to the default output, four lines of decoded data have been printed. In this case, the line prefixed with `[2:22]` contains the correct decoding. The following section explains this in more detail.
+In addition to the default output, four lines of decoded data have been printed. In this case, the line prefixed with `[2:22]` contains the correct decoding. The section about **surrounded base64 strings** explains this in more detail.
+
+If you are only interested in decodings with certain offsets, you can provide the decode flag with parameters:
+```
+$ python3 find64.py testfile -d2          
+
+[...]
+
+Match #2:
+  Start: 7014  End: 7039  Length: 25
+  Stripped: False
+  Shell command: tail -c 345 testfile | head -c 25
+  Stripped Data: CSVGhpcyB3YXMgdHJpY2t5IQo
+  Decoded Data:
+    [2:22]: b'This was tricky'
+```
 ## Surrounded Base64 Strings
 The base64 representation of the string `This was tricky` is `VGhpcyB3YXMgdHJpY2t5`. Unfortunately, in the test file the base64 string is surrounded by the characters `CS` and `IQo`. Since these also belong to the base64 charset, find64 returns the entire string `CSVGhpcyB3YXMgdHJpY2t5IQo` as result. find64 tackles this problem by decoding base64 strings from four positions:  
 
