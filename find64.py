@@ -96,7 +96,7 @@ def parse():
 	parser.add_argument('file', help='The file to parse for base64.')
 	parser.add_argument('-n', help='The minimum length for a base64 string to be returned. Default 16.', type=int, default=16)
 	parser.add_argument('-s', help='The special characters the base64 string consists of. Default `+/`. Urlsafe `-_`. Order matters.', default='+/')
-	parser.add_argument('-d', help='Decode the detected base64 string.', default='', const='0123', nargs='?')
+	parser.add_argument('-d', help='Decode the detected base64 string. The optional parameter `D` specifies from which offset the decoding starts.', default='', const='0123', nargs='?')
 	parser.add_argument('-c', help='Output results as CSV.', action='store_true')
 	args = parser.parse_args()
 	if args.n < 4:
