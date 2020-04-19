@@ -23,10 +23,11 @@ class B64Sequence():
 
 		self.stripped = not (self.stripped_length == self.length)
 
-		self.decoded_stripped_data = {}
-		for i in range(4):
-			i_end = self.stripped_length - (self.stripped_length - i) % 4
-			self.decoded_stripped_data['{}:{}'.format(i, i_end)] = base64.b64decode(stripped_data[i:i_end], bytes(args.s, 'utf-8'))
+		self.decoded_stripped_data = []
+		for o in range(4):
+			o_end = self.stripped_length - (self.stripped_length - o) % 4
+			self.decoded_stripped_data.append({'offset_end':o_end, 'data':base64.b64decode(stripped_data[o:o_end], bytes(args.s, 'utf-8'))})
+
 
 def detect_whitespaces(binary):
 	whitespace_iter = re.finditer(b'\s+', binary)
@@ -66,8 +67,8 @@ def calculate_span(stripped_span, whitespaces):
 
 def print_results_CSV(results):
 	csvwriter = csv.writer(sys.stdout)
-	if args.d:
-		csvwriter.writerows([[i, result.start, result.end, result.length, result.stripped, result.length - result.stripped_length, result.stripped_data] + [d for d in result.decoded_stripped_data.values()] for i, result in enumerate(results)])
+	if len(args.offsets) > 0:
+		csvwriter.writerows([[i, result.start, result.end, result.length, result.stripped, result.length - result.stripped_length, result.stripped_data] + [result.decoded_stripped_data[o]['data'] for o in args.offsets] for i, result in enumerate(results)])
 	else:
 		csvwriter.writerows([[i, result.start, result.end, result.length, result.stripped, result.length - result.stripped_length, result.stripped_data] for i, result in enumerate(results)])
 
@@ -83,10 +84,11 @@ def print_results(results):
 			print('  Stripped: False')
 		print('  Shell command: tail -c {} {} | head -c {}'.format(binary_len - result.start, args.file, result.length))
 		print('  Stripped Data: {}'.format(result.stripped_data))
-		if args.d:
+		if len(args.offsets) > 0:
 			print('  Decoded Data:')
-			for o, d in result.decoded_stripped_data.items():
-				print('    [{}]: {}'.format(o, d))
+			for o in args.offsets:
+				dsd = result.decoded_stripped_data[o]
+				print('    [{}:{}]: {}'.format(o, dsd['offset_end'], dsd['data']))
 
 
 def parse():
@@ -94,11 +96,20 @@ def parse():
 	parser.add_argument('file', help='The file to parse for base64.')
 	parser.add_argument('-n', help='The minimum length for a base64 string to be returned. Default 16.', type=int, default=16)
 	parser.add_argument('-s', help='The special characters the base64 string consists of. Default `+/`. Urlsafe `-_`. Order matters.', default='+/')
-	parser.add_argument('-d', help='Decode the detected base64 string.', action='store_true')
+	parser.add_argument('-d', help='Decode the detected base64 string.', default='', const='0123', nargs='?')
 	parser.add_argument('-c', help='Output results as CSV.', action='store_true')
 	args = parser.parse_args()
 	if args.n < 4:
 		parser.error('The minimum length for a base64 string is 4.')
+	if len(args.d) > 4:
+		parser.error('d takes at most 1 parameter with a maximum length of 4.')
+	args.offsets = []
+	for v in args.d:
+		if v not in '0123':
+			parser.error('the parameter of d may only consist of the characters 0, 1, 2, and 3.')
+		if int(v) in args.offsets:
+			parser.error('the parameter of d may not contain identical characters.')
+		args.offsets.append(int(v))
 	return args
 
 
