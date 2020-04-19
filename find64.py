@@ -71,6 +71,7 @@ def print_results_CSV(results):
 	else:
 		csvwriter.writerows([[i, result.start, result.end, result.length, result.stripped, result.length - result.stripped_length, result.stripped_data] for i, result in enumerate(results)])
 
+
 def print_results(results):
 	for i, result in enumerate(results):
 		print()
