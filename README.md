@@ -61,14 +61,15 @@ $ python3 find64.py testfile -c
 2,7014,7039,25,False,0,CSVGhpcyB3YXMgdHJpY2t5IQo
 ```
 The columns are defined as follows:
-`#,start,end,length,stripped,bybytes,data`
+`#,start,end,length,stripped,stripped_bytes,data,[decoded]`
 * `#` Increasing counter for detected base64 strings, starting at 0.
 * `start` The offset where the base64 string starts.
 * `end` The offset where the base64 string ends.
 * `length` The length of the unstripped base64 string (`end` - `start`).
 * `stripped` Boolean value if the base64 string was stripped, i.e. if whitespaces were removed.
-* `bybytes` The number of bytes that have been stripped.
+* `stripped_bytes` The number of bytes that have been stripped.
 * `data` The stripped base64 string.
+* `[decoded]` Only if the `-d` flag is provided. The possible decodings of the base64 string in default order (0, 1, 2, 3) or in the order as defined by the parameter, e.g. 3,0,1 for `-d301'.
 
 ### Decode Flag
 You might have recognized that decoding match #2 only yields gibberish.
